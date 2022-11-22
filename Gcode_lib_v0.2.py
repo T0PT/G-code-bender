@@ -15,7 +15,7 @@ class gcode():
     def __init__(self, file=''):
         self.path=file
     
-    def bend(self, func=math.sin, min_func=0.5*math.pi, max_func=2.5*math.pi, plane='X', plane2='Z', offset=20, func_mul=20):
+    def bend(self, func=math.sin, min_func=0.5*math.pi, max_func=2.5*math.pi, plane='X', plane2='Z', offset=10, func_mul=20):
         started=False
         layerno=0
         allayers=0
@@ -23,18 +23,23 @@ class gcode():
         with open(self.path, 'r') as inpt:
             for currline in inpt:
                 if 'LAYER:' in currline: allayers = int(currline[7:])  
-        values=[func(i)*func_mul for i in np.arange(min_func, max_func, (max_func-min_func)/allayers)]#*(1-1/allayers)]      
+        values=[func(i)*func_mul for i in np.arange(min_func, max_func, (max_func-min_func)/allayers)]#*(1-1/allayers)]   
+        #print(values)   
         #range(min,max, float(max-min)/float(worklayermax-worklayermin))
         #values = [x for x in range(500)]
         with open(self.path, 'r') as inpt, open('documnt.txt', 'w+') as output:
+            count=1
             for currline in inpt:
                 out=''
                 if 'LAYER:' in currline: layerno = int(currline[7:])
                 if ';end of start g-code' in currline or ';start of end g-code' in currline: started= not started
                 if started == False:
                     output.write(currline)
+                    count+=1
                 else:
-                    if 'G0' not in currline and 'G1' not in currline: output.write(currline)
+                    if 'G0' not in currline and 'G1' not in currline: 
+                        output.write(currline)
+                        count+=1
                     else:
                         out+=currline[:2]+' '
                         vals=lastplanes                      
@@ -44,15 +49,21 @@ class gcode():
                             if last==-1: break                          
                             vals.update({currline[last+1]:currline[last+2: currline.find(' ', last+1)]})                            
                             last=currline.find(' ', last+1)
-                        lastplanes.update(vals)
-                        norm=normal(func=func,point=layerno/allayers*(max_func-min_func)+min_func, multiplier=1/allayers*func_mul)
+                        if count >=3925 and count<=3935: print(str(count)+ '   '+str(lastplanes)+'...'+str(vals))
+                        ll=vals
+                        if count >=3925 and count<=3935: print(str(count)+ '   '+str(lastplanes)+'///'+str(vals))
+                        norm=normal(func=func,point=layerno/allayers*((max_func-min_func)+min_func), multiplier=1/allayers*1*func_mul)               
                         # let's bend :)                        
-                        vals.update({plane2: math.sin(norm)*(offset-float(vals[plane]))+float(vals[plane2])})#
-                        vals.update({plane: values[layerno-1]+math.cos(norm)*float(vals[plane])})
-                        #foooh                        
+                        #vals.update({plane2: (math.sin(norm)*(float(vals[plane])-offset))+float(vals[plane2])})#                       
+                        vals.update({plane: values[layerno-1]+float(vals[plane])})#math.cos(norm)*
+                        #foooh
+                        if count >=3925 and count<=3935: print(str(count)+ '   '+str(lastplanes)+'   '+str(vals))
                         for key,value in vals.items():
-                            out+=key+str(round(float(value),3))+' '
-                        output.write(out+'\n')   
+                            if key in currline or key in [plane, plane2]:
+                                out+=key+str(round(float(value),3))+' '
+                        output.write(out+'\n')
+                        count+=1
+                        lastplanes=ll   
         print('DONE')
         with open('documnt.txt', 'r') as inpt, open(self.path[:-6]+'_bent.gcode', 'w+') as output:
             for line in inpt:
@@ -60,6 +71,6 @@ class gcode():
         print('DUMPED')    
 
 cod=gcode('FBG5_xyzCalibration_cube.gcode')
-cod.bend(offset=9)
+cod.bend(offset=10)
 
 

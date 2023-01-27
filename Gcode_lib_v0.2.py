@@ -50,7 +50,7 @@ class gcode():
                             vals.update({currline[last+1]:currline[last+2: currline.find(' ', last+1)]})                            
                             last=currline.find(' ', last+1)
                         if count >=3925 and count<=3935: print(str(count)+ '   '+str(lastplanes)+'...'+str(vals))
-                        ll=vals
+                        lastplanes.update(vals)
                         if count >=3925 and count<=3935: print(str(count)+ '   '+str(lastplanes)+'///'+str(vals))
                         norm=normal(func=func,point=layerno/allayers*((max_func-min_func)+min_func), multiplier=1/allayers*1*func_mul)               
                         # let's bend :)                        
@@ -63,7 +63,7 @@ class gcode():
                                 out+=key+str(round(float(value),3))+' '
                         output.write(out+'\n')
                         count+=1
-                        lastplanes=ll   
+                           
         print('DONE')
         with open('documnt.txt', 'r') as inpt, open(self.path[:-6]+'_bent.gcode', 'w+') as output:
             for line in inpt:
